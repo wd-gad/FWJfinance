@@ -10,7 +10,7 @@ export default function SignInButton() {
     setLoading(true);
 
     const supabase = createClient();
-    const redirectTo = `${window.location.origin}/auth/callback?next=/dashboard`;
+    const redirectTo = `${window.location.origin}/auth/callback`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
