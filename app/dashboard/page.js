@@ -11,9 +11,16 @@ export default async function DashboardPage({ searchParams }) {
     data: { user }
   } = await supabase.auth.getUser();
 
+  const { data: customerRows } = await supabase
+    .from('entries')
+    .select('customer_name')
+    .order('customer_name', { ascending: true });
+
   let query = supabase
     .from('entries')
-    .select('id, occurred_on, type, amount, note, created_at')
+    .select(
+      'id, customer_name, occurred_on, payment_date, deposit_due_on, type, amount, note, created_at'
+    )
     .order('occurred_on', { ascending: false })
     .order('created_at', { ascending: false });
 
@@ -42,6 +49,7 @@ export default async function DashboardPage({ searchParams }) {
 
       <DashboardClient
         initialEntries={entries ?? []}
+        initialCustomers={customerRows ?? []}
         initialStart={start}
         initialEnd={end}
         initialError={error?.message ?? ''}

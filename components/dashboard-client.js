@@ -18,6 +18,7 @@ const percentFormatter = new Intl.NumberFormat('ja-JP', {
 
 export default function DashboardClient({
   initialEntries,
+  initialCustomers,
   initialStart,
   initialEnd,
   initialError
@@ -30,7 +31,10 @@ export default function DashboardClient({
   const [message, setMessage] = useState(initialError);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
+    customer_name: '',
     occurred_on: new Date().toISOString().slice(0, 10),
+    payment_date: '',
+    deposit_due_on: '',
     type: 'sales',
     amount: '',
     note: ''
@@ -65,6 +69,11 @@ export default function DashboardClient({
     };
   }, [entries]);
 
+  const customerOptions = useMemo(() => {
+    return [...new Set(initialCustomers.map((entry) => entry.customer_name?.trim()).filter(Boolean))]
+      .sort((left, right) => left.localeCompare(right, 'ja'));
+  }, [initialCustomers]);
+
   function handleFilterSubmit(event) {
     event.preventDefault();
 
@@ -94,15 +103,24 @@ export default function DashboardClient({
     setMessage('');
 
     const amount = Number(form.amount);
-    if (!form.occurred_on || !form.type || !Number.isFinite(amount) || amount < 0) {
-      setMessage('日付・区分・金額を正しく入力してください。');
+    if (
+      !form.customer_name.trim() ||
+      !form.occurred_on ||
+      !form.type ||
+      !Number.isFinite(amount) ||
+      amount < 0
+    ) {
+      setMessage('取引先名・日付・区分・金額を正しく入力してください。');
       setSubmitting(false);
       return;
     }
 
     const supabase = createClient();
     const { error } = await supabase.from('entries').insert({
+      customer_name: form.customer_name.trim(),
       occurred_on: form.occurred_on,
+      payment_date: form.payment_date || null,
+      deposit_due_on: form.deposit_due_on || null,
       type: form.type,
       amount,
       note: form.note.trim()
@@ -115,7 +133,10 @@ export default function DashboardClient({
     }
 
     setForm({
+      customer_name: '',
       occurred_on: new Date().toISOString().slice(0, 10),
+      payment_date: '',
+      deposit_due_on: '',
       type: 'sales',
       amount: '',
       note: ''
@@ -137,12 +158,44 @@ export default function DashboardClient({
 
         <form className="form-grid" onSubmit={handleCreateEntry}>
           <label>
-            日付
+            取引先名
+            <input
+              type="text"
+              list="customer-options"
+              placeholder="株式会社サンプル"
+              value={form.customer_name}
+              onChange={(event) => setForm({ ...form, customer_name: event.target.value })}
+              required
+            />
+            <datalist id="customer-options">
+              {customerOptions.map((customerName) => (
+                <option key={customerName} value={customerName} />
+              ))}
+            </datalist>
+          </label>
+          <label>
+            取引日
             <input
               type="date"
               value={form.occurred_on}
               onChange={(event) => setForm({ ...form, occurred_on: event.target.value })}
               required
+            />
+          </label>
+          <label>
+            支払日付
+            <input
+              type="date"
+              value={form.payment_date}
+              onChange={(event) => setForm({ ...form, payment_date: event.target.value })}
+            />
+          </label>
+          <label>
+            入金予定日
+            <input
+              type="date"
+              value={form.deposit_due_on}
+              onChange={(event) => setForm({ ...form, deposit_due_on: event.target.value })}
             />
           </label>
           <label>
@@ -258,7 +311,10 @@ export default function DashboardClient({
           <table>
             <thead>
               <tr>
+                <th>取引先名</th>
                 <th>日付</th>
+                <th>支払日付</th>
+                <th>入金予定日</th>
                 <th>区分</th>
                 <th>金額</th>
                 <th>メモ</th>
@@ -268,7 +324,10 @@ export default function DashboardClient({
               {entries.length > 0 ? (
                 entries.map((entry) => (
                   <tr key={entry.id}>
+                    <td>{entry.customer_name || '-'}</td>
                     <td>{entry.occurred_on}</td>
+                    <td>{entry.payment_date || '-'}</td>
+                    <td>{entry.deposit_due_on || '-'}</td>
                     <td>
                       <span className={`pill ${entry.type}`}>
                         {entry.type === 'sales' ? '売上' : '原価'}
@@ -280,7 +339,7 @@ export default function DashboardClient({
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="empty-cell">
+                  <td colSpan="7" className="empty-cell">
                     まだ取引がありません。まずは上のフォームから登録してください。
                   </td>
                 </tr>

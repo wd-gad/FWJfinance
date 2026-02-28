@@ -3,12 +3,19 @@ create extension if not exists pgcrypto;
 create table if not exists public.entries (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
+  customer_name text,
   occurred_on date not null,
+  payment_date date,
+  deposit_due_on date,
   type text not null check (type in ('sales', 'cost')),
   amount integer not null check (amount >= 0),
   note text,
   created_at timestamptz not null default now()
 );
+
+alter table public.entries add column if not exists customer_name text;
+alter table public.entries add column if not exists payment_date date;
+alter table public.entries add column if not exists deposit_due_on date;
 
 alter table public.entries enable row level security;
 
