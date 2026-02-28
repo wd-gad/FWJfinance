@@ -19,7 +19,7 @@ export default async function DashboardPage({ searchParams }) {
   let query = supabase
     .from('entries')
     .select(
-      'id, customer_name, occurred_on, payment_date, deposit_due_on, type, amount, note, created_at'
+      'id, customer_name, occurred_on, payment_date, deposit_due_on, payment_completed, deposit_completed, type, amount, note, created_at'
     )
     .order('occurred_on', { ascending: false })
     .order('created_at', { ascending: false });

@@ -242,6 +242,17 @@ select:disabled {
   cursor: wait;
 }
 
+.compact-button {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 0.88rem;
+}
+
+.danger-button {
+  border-color: rgba(185, 28, 28, 0.2);
+  color: #b91c1c;
+}
+
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -340,6 +351,31 @@ th {
 .pill.cost {
   background: var(--amber-soft);
   color: var(--amber);
+}
+
+.status-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border-radius: 999px;
+  padding: 0 12px;
+  border: 1px solid rgba(80, 58, 28, 0.16);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.status-toggle.is-complete {
+  background: var(--green-soft);
+  color: var(--green);
+  border-color: rgba(22, 101, 52, 0.18);
+}
+
+.table-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .empty-cell {

@@ -30,6 +30,7 @@ export default function DashboardClient({
   const [end, setEnd] = useState(initialEnd);
   const [message, setMessage] = useState(initialError);
   const [submitting, setSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
     customer_name: '',
     occurred_on: new Date().toISOString().slice(0, 10),
@@ -73,6 +74,10 @@ export default function DashboardClient({
     return [...new Set(initialCustomers.map((entry) => entry.customer_name?.trim()).filter(Boolean))]
       .sort((left, right) => left.localeCompare(right, 'ja'));
   }, [initialCustomers]);
+  const currentEditingEntry = useMemo(
+    () => entries.find((entry) => entry.id === editingId) ?? null,
+    [editingId, entries]
+  );
 
   const isSales = form.type === 'sales';
   const isCost = form.type === 'cost';
@@ -131,15 +136,27 @@ export default function DashboardClient({
     }
 
     const supabase = createClient();
-    const { error } = await supabase.from('entries').insert({
+    const payload = {
       customer_name: form.customer_name.trim(),
       occurred_on: form.occurred_on,
       payment_date: isCost ? form.payment_date || null : null,
       deposit_due_on: isSales ? form.deposit_due_on || null : null,
+      payment_completed:
+        isCost && currentEditingEntry?.type === 'cost'
+          ? currentEditingEntry.payment_completed
+          : false,
+      deposit_completed:
+        isSales && currentEditingEntry?.type === 'sales'
+          ? currentEditingEntry.deposit_completed
+          : false,
       type: form.type,
       amount,
       note: form.note.trim()
-    });
+    };
+
+    const { error } = editingId
+      ? await supabase.from('entries').update(payload).eq('id', editingId)
+      : await supabase.from('entries').insert(payload);
 
     if (error) {
       setMessage(error.message);
@@ -156,6 +173,7 @@ export default function DashboardClient({
       amount: '',
       note: ''
     });
+    setEditingId(null);
 
     startTransition(() => {
       router.refresh();
@@ -163,12 +181,81 @@ export default function DashboardClient({
     setSubmitting(false);
   }
 
+  function handleEditEntry(entry) {
+    setEditingId(entry.id);
+    setMessage('');
+    setForm({
+      customer_name: entry.customer_name || '',
+      occurred_on: entry.occurred_on || new Date().toISOString().slice(0, 10),
+      payment_date: entry.payment_date || '',
+      deposit_due_on: entry.deposit_due_on || '',
+      type: entry.type || '',
+      amount: String(entry.amount ?? ''),
+      note: entry.note || ''
+    });
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+    setMessage('');
+    setForm({
+      customer_name: '',
+      occurred_on: new Date().toISOString().slice(0, 10),
+      payment_date: '',
+      deposit_due_on: '',
+      type: '',
+      amount: '',
+      note: ''
+    });
+  }
+
+  async function handleDeleteEntry(entryId) {
+    const confirmed = window.confirm('この取引を削除しますか？');
+    if (!confirmed) {
+      return;
+    }
+
+    const supabase = createClient();
+    const { error } = await supabase.from('entries').delete().eq('id', entryId);
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    if (editingId === entryId) {
+      handleCancelEdit();
+    }
+
+    startTransition(() => {
+      router.refresh();
+    });
+  }
+
+  async function handleToggleSettlement(entry) {
+    const supabase = createClient();
+    const payload =
+      entry.type === 'sales'
+        ? { deposit_completed: !entry.deposit_completed }
+        : { payment_completed: !entry.payment_completed };
+    const { error } = await supabase.from('entries').update(payload).eq('id', entry.id);
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    startTransition(() => {
+      router.refresh();
+    });
+  }
+
   return (
     <div className="dashboard-grid">
       <section className="section-card">
         <div className="section-heading">
           <p className="eyebrow">Entry</p>
-          <h2>売上 / 原価を登録</h2>
+          <h2>{editingId ? '取引を編集' : '売上 / 原価を登録'}</h2>
         </div>
 
         <form className="form-grid" onSubmit={handleCreateEntry}>
@@ -262,9 +349,16 @@ export default function DashboardClient({
               onChange={(event) => setForm({ ...form, note: event.target.value })}
             />
           </label>
-          <button type="submit" className="primary-button" disabled={submitting || isPending}>
-            {submitting ? '登録中...' : '登録する'}
-          </button>
+          <div className="action-row">
+            <button type="submit" className="primary-button" disabled={submitting || isPending}>
+              {submitting ? editingId ? '更新中...' : '登録中...' : editingId ? '更新する' : '登録する'}
+            </button>
+            {editingId && (
+              <button type="button" className="secondary-button" onClick={handleCancelEdit}>
+                編集をやめる
+              </button>
+            )}
+          </div>
         </form>
       </section>
 
@@ -345,9 +439,11 @@ export default function DashboardClient({
                 <th>日付</th>
                 <th>支払日付</th>
                 <th>入金予定日</th>
+                <th>状態</th>
                 <th>区分</th>
                 <th>金額</th>
                 <th>メモ</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody>
@@ -359,17 +455,58 @@ export default function DashboardClient({
                     <td>{entry.payment_date || '-'}</td>
                     <td>{entry.deposit_due_on || '-'}</td>
                     <td>
+                      <button
+                        type="button"
+                        className={`status-toggle ${
+                          entry.type === 'sales'
+                            ? entry.deposit_completed
+                              ? 'is-complete'
+                              : ''
+                            : entry.payment_completed
+                              ? 'is-complete'
+                              : ''
+                        }`}
+                        onClick={() => handleToggleSettlement(entry)}
+                      >
+                        {entry.type === 'sales'
+                          ? entry.deposit_completed
+                            ? '入金済み'
+                            : '未入金'
+                          : entry.payment_completed
+                            ? '支払済み'
+                            : '未払い'}
+                      </button>
+                    </td>
+                    <td>
                       <span className={`pill ${entry.type}`}>
                         {entry.type === 'sales' ? '売上' : '原価'}
                       </span>
                     </td>
                     <td>{currencyFormatter.format(entry.amount)}</td>
                     <td>{entry.note || '-'}</td>
+                    <td>
+                      <div className="table-actions">
+                        <button
+                          type="button"
+                          className="secondary-button compact-button"
+                          onClick={() => handleEditEntry(entry)}
+                        >
+                          編集
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary-button compact-button danger-button"
+                          onClick={() => handleDeleteEntry(entry.id)}
+                        >
+                          削除
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="empty-cell">
+                  <td colSpan="9" className="empty-cell">
                     まだ取引がありません。まずは上のフォームから登録してください。
                   </td>
                 </tr>

@@ -7,6 +7,8 @@ create table if not exists public.entries (
   occurred_on date not null,
   payment_date date,
   deposit_due_on date,
+  payment_completed boolean not null default false,
+  deposit_completed boolean not null default false,
   type text not null check (type in ('sales', 'cost')),
   amount integer not null check (amount >= 0),
   note text,
@@ -16,6 +18,8 @@ create table if not exists public.entries (
 alter table public.entries add column if not exists customer_name text;
 alter table public.entries add column if not exists payment_date date;
 alter table public.entries add column if not exists deposit_due_on date;
+alter table public.entries add column if not exists payment_completed boolean not null default false;
+alter table public.entries add column if not exists deposit_completed boolean not null default false;
 
 alter table public.entries enable row level security;
 

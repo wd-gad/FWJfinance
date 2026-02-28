@@ -11,7 +11,7 @@ Supabase認証付きの会計アプリです。トップページから Google S
 5. Supabase の Redirect URLs に `http://localhost:3000/auth/callback` と本番URLを追加する
 6. `npm run dev`
 
-`supabase/schema.sql` を更新した場合は、既存プロジェクトでも同じSQLを再実行してください。`customer_name`, `payment_date`, `deposit_due_on` などの追加列はこの再実行で反映されます。
+`supabase/schema.sql` を更新した場合は、既存プロジェクトでも同じSQLを再実行してください。`customer_name`, `payment_date`, `deposit_due_on`, `payment_completed`, `deposit_completed` などの追加列はこの再実行で反映されます。
 
 ## Vercel
 
