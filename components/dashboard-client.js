@@ -135,8 +135,8 @@ export default function DashboardClient({
     const { error } = await supabase.from('entries').insert({
       customer_name: form.customer_name.trim(),
       occurred_on: form.occurred_on,
-      payment_date: form.payment_date || null,
-      deposit_due_on: form.deposit_due_on || null,
+      payment_date: isCost ? form.payment_date || null : null,
+      deposit_due_on: isSales ? form.deposit_due_on || null : null,
       type: form.type,
       amount,
       note: form.note.trim()
@@ -217,7 +217,7 @@ export default function DashboardClient({
               value={form.payment_date}
               onChange={(event) => setForm({ ...form, payment_date: event.target.value })}
               required={isCost}
-              disabled={!hasType}
+              disabled={!hasType || isSales}
             />
           </label>
           <label>
@@ -227,7 +227,7 @@ export default function DashboardClient({
               value={form.deposit_due_on}
               onChange={(event) => setForm({ ...form, deposit_due_on: event.target.value })}
               required={isSales}
-              disabled={!hasType}
+              disabled={!hasType || isCost}
             />
           </label>
           <label>
