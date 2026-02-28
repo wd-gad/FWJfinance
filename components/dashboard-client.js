@@ -74,6 +74,9 @@ export default function DashboardClient({
       .sort((left, right) => left.localeCompare(right, 'ja'));
   }, [initialCustomers]);
 
+  const isSales = form.type === 'sales';
+  const isCost = form.type === 'cost';
+
   function handleFilterSubmit(event) {
     event.preventDefault();
 
@@ -111,6 +114,18 @@ export default function DashboardClient({
       amount < 0
     ) {
       setMessage('取引先名・日付・区分・金額を正しく入力してください。');
+      setSubmitting(false);
+      return;
+    }
+
+    if (isSales && !form.deposit_due_on) {
+      setMessage('売上では入金予定日が必須です。');
+      setSubmitting(false);
+      return;
+    }
+
+    if (isCost && !form.payment_date) {
+      setMessage('原価では支払日付が必須です。');
       setSubmitting(false);
       return;
     }
@@ -183,19 +198,21 @@ export default function DashboardClient({
             />
           </label>
           <label>
-            支払日付
+            支払日付 {isCost ? '必須' : '任意'}
             <input
               type="date"
               value={form.payment_date}
               onChange={(event) => setForm({ ...form, payment_date: event.target.value })}
+              required={isCost}
             />
           </label>
           <label>
-            入金予定日
+            入金予定日 {isSales ? '必須' : '任意'}
             <input
               type="date"
               value={form.deposit_due_on}
               onChange={(event) => setForm({ ...form, deposit_due_on: event.target.value })}
+              required={isSales}
             />
           </label>
           <label>
