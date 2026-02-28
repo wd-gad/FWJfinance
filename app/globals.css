@@ -260,12 +260,6 @@ select:disabled {
   margin-top: 18px;
 }
 
-.breakdown-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-}
-
 .breakdown-card {
   padding: 18px;
   border-radius: 22px;
@@ -276,6 +270,19 @@ select:disabled {
 .breakdown-card h3 {
   margin: 0 0 12px;
   font-size: 1rem;
+}
+
+.aggregation-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.aggregation-selector {
+  max-width: 320px;
+}
+
+.single-breakdown-card {
+  overflow: hidden;
 }
 
 .metric-card {
@@ -409,8 +416,7 @@ th {
 @media (max-width: 900px) {
   .hero-card,
   .dashboard-grid,
-  .info-grid,
-  .breakdown-grid {
+  .info-grid {
     grid-template-columns: 1fr;
   }
 

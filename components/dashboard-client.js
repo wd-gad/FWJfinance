@@ -29,6 +29,12 @@ const periodGroupOptions = [
   { value: 'day', label: '日ごと' }
 ];
 
+const aggregationViewOptions = [
+  { value: 'customer', label: '取引先ごと' },
+  { value: 'period', label: '期間ごと' },
+  { value: 'amount-range', label: '金額レンジごと' }
+];
+
 function getAmountRangeLabel(amount) {
   const matched = amountRangeOptions.find(
     (option) => option.value !== 'all' && amount >= option.min && amount <= option.max
@@ -112,7 +118,8 @@ export default function DashboardClient({ initialEntries, initialError }) {
     customer: 'all',
     entryType: 'all',
     amountRange: 'all',
-    periodGrouping: 'month'
+    periodGrouping: 'month',
+    aggregationView: 'customer'
   });
   const [form, setForm] = useState({
     customer_name: '',
@@ -181,6 +188,34 @@ export default function DashboardClient({ initialEntries, initialError }) {
     () => buildGroupedRows(filteredEntries, (entry) => getAmountRangeLabel(entry.amount)),
     [filteredEntries]
   );
+  const activeAggregation = useMemo(() => {
+    if (filters.aggregationView === 'period') {
+      return {
+        title: '期間ごと',
+        labelTitle:
+          filters.periodGrouping === 'month'
+            ? '月'
+            : filters.periodGrouping === 'week'
+              ? '週'
+              : '日付',
+        rows: periodRows
+      };
+    }
+
+    if (filters.aggregationView === 'amount-range') {
+      return {
+        title: '金額レンジごと',
+        labelTitle: '金額レンジ',
+        rows: amountRangeRows
+      };
+    }
+
+    return {
+      title: '取引先ごと',
+      labelTitle: '取引先名',
+      rows: customerRows
+    };
+  }, [amountRangeRows, customerRows, filters.aggregationView, filters.periodGrouping, periodRows]);
 
   function resetForm() {
     setForm({
@@ -592,7 +627,8 @@ export default function DashboardClient({ initialEntries, initialError }) {
                   customer: 'all',
                   entryType: 'all',
                   amountRange: 'all',
-                  periodGrouping: 'month'
+                  periodGrouping: 'month',
+                  aggregationView: 'customer'
                 });
               }}
             >
@@ -624,24 +660,31 @@ export default function DashboardClient({ initialEntries, initialError }) {
       <section className="section-card full-width">
         <div className="section-heading">
           <p className="eyebrow">Breakdown</p>
-          <h2>取引先別・期間別・金額レンジ別の集計</h2>
+          <h2>集計キーを選んで結果を表示</h2>
         </div>
 
         {message && <p className="status-line error">{message}</p>}
         <p className="status-line">{filteredEntries.length} 件が現在の集計対象です。</p>
+        <div className="aggregation-panel">
+          <label className="aggregation-selector">
+            集計キー
+            <select
+              value={filters.aggregationView}
+              onChange={(event) =>
+                setFilters({ ...filters, aggregationView: event.target.value })
+              }
+            >
+              {aggregationViewOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <div className="breakdown-grid">
-          <section className="breakdown-card">
-            <h3>取引先ごと</h3>
-            {renderGroupedTable(customerRows, '取引先名')}
-          </section>
-          <section className="breakdown-card">
-            <h3>期間ごと</h3>
-            {renderGroupedTable(periodRows, filters.periodGrouping === 'month' ? '月' : filters.periodGrouping === 'week' ? '週' : '日付')}
-          </section>
-          <section className="breakdown-card">
-            <h3>金額レンジごと</h3>
-            {renderGroupedTable(amountRangeRows, '金額レンジ')}
+          <section className="breakdown-card single-breakdown-card">
+            <h3>{activeAggregation.title}</h3>
+            {renderGroupedTable(activeAggregation.rows, activeAggregation.labelTitle)}
           </section>
         </div>
       </section>
