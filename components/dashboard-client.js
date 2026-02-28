@@ -174,7 +174,6 @@ export default function DashboardClient({
       note: ''
     });
     setEditingId(null);
-
     startTransition(() => {
       router.refresh();
     });
@@ -227,17 +226,19 @@ export default function DashboardClient({
       handleCancelEdit();
     }
 
+    setEntries((currentEntries) => currentEntries.filter((entry) => entry.id !== entryId));
+
     startTransition(() => {
       router.refresh();
     });
   }
 
-  async function handleToggleSettlement(entry) {
+  async function handleSettlementChange(entry, nextStatus) {
     const supabase = createClient();
     const payload =
       entry.type === 'sales'
-        ? { deposit_completed: !entry.deposit_completed }
-        : { payment_completed: !entry.payment_completed };
+        ? { deposit_completed: nextStatus === 'completed' }
+        : { payment_completed: nextStatus === 'completed' };
     const { error } = await supabase.from('entries').update(payload).eq('id', entry.id);
 
     if (error) {
@@ -245,9 +246,16 @@ export default function DashboardClient({
       return;
     }
 
-    startTransition(() => {
-      router.refresh();
-    });
+    setEntries((currentEntries) =>
+      currentEntries.map((currentEntry) =>
+        currentEntry.id === entry.id
+          ? {
+              ...currentEntry,
+              ...payload
+            }
+          : currentEntry
+      )
+    );
   }
 
   return (
@@ -455,9 +463,8 @@ export default function DashboardClient({
                     <td>{entry.payment_date || '-'}</td>
                     <td>{entry.deposit_due_on || '-'}</td>
                     <td>
-                      <button
-                        type="button"
-                        className={`status-toggle ${
+                      <select
+                        className={`status-select ${
                           entry.type === 'sales'
                             ? entry.deposit_completed
                               ? 'is-complete'
@@ -466,16 +473,29 @@ export default function DashboardClient({
                               ? 'is-complete'
                               : ''
                         }`}
-                        onClick={() => handleToggleSettlement(entry)}
+                        value={
+                          entry.type === 'sales'
+                            ? entry.deposit_completed
+                              ? 'completed'
+                              : 'pending'
+                            : entry.payment_completed
+                              ? 'completed'
+                              : 'pending'
+                        }
+                        onChange={(event) => handleSettlementChange(entry, event.target.value)}
                       >
-                        {entry.type === 'sales'
-                          ? entry.deposit_completed
-                            ? '入金済み'
-                            : '未入金'
-                          : entry.payment_completed
-                            ? '支払済み'
-                            : '未払い'}
-                      </button>
+                        {entry.type === 'sales' ? (
+                          <>
+                            <option value="pending">未入金</option>
+                            <option value="completed">入金済み</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="pending">未払い</option>
+                            <option value="completed">支払済み</option>
+                          </>
+                        )}
+                      </select>
                     </td>
                     <td>
                       <span className={`pill ${entry.type}`}>

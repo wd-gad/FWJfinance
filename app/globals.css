@@ -353,20 +353,17 @@ th {
   color: var(--amber);
 }
 
-.status-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.status-select {
   min-height: 34px;
   border-radius: 999px;
-  padding: 0 12px;
+  padding: 0 34px 0 12px;
   border: 1px solid rgba(80, 58, 28, 0.16);
   background: transparent;
   color: var(--muted);
-  cursor: pointer;
+  width: auto;
 }
 
-.status-toggle.is-complete {
+.status-select.is-complete {
   background: var(--green-soft);
   color: var(--green);
   border-color: rgba(22, 101, 52, 0.18);
