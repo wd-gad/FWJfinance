@@ -76,7 +76,6 @@ export default function DashboardClient({
 
   const isSales = form.type === 'sales';
   const isCost = form.type === 'cost';
-  const hasType = Boolean(form.type);
 
   function handleFilterSubmit(event) {
     event.preventDefault();
@@ -202,7 +201,15 @@ export default function DashboardClient({
             区分
             <select
               value={form.type}
-              onChange={(event) => setForm({ ...form, type: event.target.value })}
+              onChange={(event) => {
+                const nextType = event.target.value;
+                setForm({
+                  ...form,
+                  type: nextType,
+                  payment_date: nextType === 'cost' ? form.payment_date : '',
+                  deposit_due_on: nextType === 'sales' ? form.deposit_due_on : ''
+                });
+              }}
               required
             >
               <option value="">選択してください</option>
@@ -217,7 +224,8 @@ export default function DashboardClient({
               value={form.payment_date}
               onChange={(event) => setForm({ ...form, payment_date: event.target.value })}
               required={isCost}
-              disabled={!hasType || isSales}
+              disabled={!isCost}
+              readOnly={!isCost}
             />
           </label>
           <label>
@@ -227,7 +235,8 @@ export default function DashboardClient({
               value={form.deposit_due_on}
               onChange={(event) => setForm({ ...form, deposit_due_on: event.target.value })}
               required={isSales}
-              disabled={!hasType || isCost}
+              disabled={!isSales}
+              readOnly={!isSales}
             />
           </label>
           <label>
