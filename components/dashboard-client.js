@@ -35,7 +35,7 @@ export default function DashboardClient({
     occurred_on: new Date().toISOString().slice(0, 10),
     payment_date: '',
     deposit_due_on: '',
-    type: 'sales',
+    type: '',
     amount: '',
     note: ''
   });
@@ -76,6 +76,7 @@ export default function DashboardClient({
 
   const isSales = form.type === 'sales';
   const isCost = form.type === 'cost';
+  const hasType = Boolean(form.type);
 
   function handleFilterSubmit(event) {
     event.preventDefault();
@@ -152,7 +153,7 @@ export default function DashboardClient({
       occurred_on: new Date().toISOString().slice(0, 10),
       payment_date: '',
       deposit_due_on: '',
-      type: 'sales',
+      type: '',
       amount: '',
       note: ''
     });
@@ -198,12 +199,25 @@ export default function DashboardClient({
             />
           </label>
           <label>
+            区分
+            <select
+              value={form.type}
+              onChange={(event) => setForm({ ...form, type: event.target.value })}
+              required
+            >
+              <option value="">選択してください</option>
+              <option value="sales">売上</option>
+              <option value="cost">原価</option>
+            </select>
+          </label>
+          <label>
             支払日付 {isCost ? '必須' : '任意'}
             <input
               type="date"
               value={form.payment_date}
               onChange={(event) => setForm({ ...form, payment_date: event.target.value })}
               required={isCost}
+              disabled={!hasType}
             />
           </label>
           <label>
@@ -213,18 +227,8 @@ export default function DashboardClient({
               value={form.deposit_due_on}
               onChange={(event) => setForm({ ...form, deposit_due_on: event.target.value })}
               required={isSales}
+              disabled={!hasType}
             />
-          </label>
-          <label>
-            区分
-            <select
-              value={form.type}
-              onChange={(event) => setForm({ ...form, type: event.target.value })}
-              required
-            >
-              <option value="sales">売上</option>
-              <option value="cost">原価</option>
-            </select>
           </label>
           <label>
             金額
