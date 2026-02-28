@@ -260,6 +260,24 @@ select:disabled {
   margin-top: 18px;
 }
 
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.breakdown-card {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.36);
+  border: 1px solid rgba(80, 58, 28, 0.08);
+}
+
+.breakdown-card h3 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+}
+
 .metric-card {
   display: grid;
   gap: 8px;
@@ -313,6 +331,10 @@ select:disabled {
 
 .table-wrap {
   overflow-x: auto;
+}
+
+.summary-table-wrap table {
+  min-width: 100%;
 }
 
 table {
@@ -387,7 +409,8 @@ th {
 @media (max-width: 900px) {
   .hero-card,
   .dashboard-grid,
-  .info-grid {
+  .info-grid,
+  .breakdown-grid {
     grid-template-columns: 1fr;
   }
 

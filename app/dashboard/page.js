@@ -2,37 +2,19 @@ import DashboardClient from '@/components/dashboard-client';
 import SignOutButton from '@/components/sign-out-button';
 import { createClient } from '@/lib/supabase/server';
 
-export default async function DashboardPage({ searchParams }) {
-  const params = await searchParams;
-  const start = typeof params?.start === 'string' ? params.start : '';
-  const end = typeof params?.end === 'string' ? params.end : '';
+export default async function DashboardPage() {
   const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
 
-  const { data: customerRows } = await supabase
-    .from('entries')
-    .select('customer_name')
-    .order('customer_name', { ascending: true });
-
-  let query = supabase
+  const { data: entries, error } = await supabase
     .from('entries')
     .select(
       'id, customer_name, occurred_on, payment_date, deposit_due_on, payment_completed, deposit_completed, type, amount, note, created_at'
     )
     .order('occurred_on', { ascending: false })
     .order('created_at', { ascending: false });
-
-  if (start) {
-    query = query.gte('occurred_on', start);
-  }
-
-  if (end) {
-    query = query.lte('occurred_on', end);
-  }
-
-  const { data: entries, error } = await query;
 
   return (
     <main className="dashboard-shell">
@@ -49,9 +31,6 @@ export default async function DashboardPage({ searchParams }) {
 
       <DashboardClient
         initialEntries={entries ?? []}
-        initialCustomers={customerRows ?? []}
-        initialStart={start}
-        initialEnd={end}
         initialError={error?.message ?? ''}
       />
     </main>
